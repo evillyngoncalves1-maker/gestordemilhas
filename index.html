@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gonex Viagens — Gestão de Milhas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"></script>
 <style>
-/* THEME VARIABLES */
 :root{
   --bg:#0f1623;--bg2:#0a1020;--bg3:#0d1525;--bg4:#0a1520;
   --border:#1e2d4a;--border2:#111c35;
@@ -13,7 +13,6 @@
   --card-bg:#ffffff;--card-stats:#f5f5f5;--card-btns:#f0f0f0;
   --card-logo-dark:#333;--card-sub:#aaa;--cs-val:#222;--cs-label:#888;
   --bar-empty:#eee;--inp-bg:#0a1520;--row-hover:#0a1225;
-  --th-bg:transparent;
 }
 [data-theme="light"]{
   --bg:#f0f2f5;--bg2:#ffffff;--bg3:#ffffff;--bg4:#f5f7fa;
@@ -22,117 +21,74 @@
   --card-bg:#ffffff;--card-stats:#f7f8fa;--card-btns:#edf0f5;
   --card-logo-dark:#222;--card-sub:#666;--cs-val:#1a1f2e;--cs-label:#888;
   --bar-empty:#dde1ea;--inp-bg:#f5f7fa;--row-hover:#f0f4fa;
-  --th-bg:#f7f8fa;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif;min-height:100vh;transition:background .2s,color .2s}
-
-/* HEADER */
 #header{background:var(--bg2);border-bottom:2px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100}
 #header-top{display:flex;align-items:center;justify-content:space-between;padding:12px 0 8px}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#c9a84c,#e8c96d);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px}
 .logo-title{color:#c9a84c;font-weight:700;font-size:16px;letter-spacing:1px}
 .logo-sub{color:var(--muted);font-size:10px}
-.hstats{display:flex;gap:20px}
+.hstats{display:flex;gap:20px;align-items:center}
 .hstat{text-align:right}
 .hstat-v{font-weight:700;font-size:14px}
 .hstat-l{color:var(--muted);font-size:10px}
 .tabs{display:flex;gap:2px}
 .tab{padding:9px 20px;border:none;cursor:pointer;font-size:12px;border-bottom:2px solid transparent;background:transparent;color:var(--muted2);transition:all .15s;font-weight:400}
 .tab.active{color:#c9a84c;border-bottom-color:#c9a84c;font-weight:700}
-
-/* CONTENT */
 #content{max-width:1300px;margin:0 auto;padding:20px 16px}
-
-/* TOOLBAR */
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .toolbar h2{color:#c9a84c;font-size:17px}
 .toolbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-
-/* SUMMARY BAR */
 .summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
 .sum-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px}
 .sum-val{font-size:18px;font-weight:700;margin-bottom:2px}
 .sum-lbl{color:var(--muted);font-size:11px}
-
-/* CARDS GRID */
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-
-/* CONTA CARD */
-.conta-card{background:var(--card-bg);border-radius:12px;padding:0;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .15s;cursor:default}
+.conta-card{background:var(--card-bg);border-radius:12px;padding:0;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .15s}
 .conta-card:hover{transform:translateY(-2px)}
-.card-header{background:#1c2a1c;padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.card-header{padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
 .card-owner{color:#fff;font-size:11px;font-weight:700;letter-spacing:.5px}
-.card-actions-top{display:flex;gap:4px}
-.card-body{padding:12px 14px 8px;background:var(--card-bg);text-align:center;min-height:90px;display:flex;align-items:center;justify-content:center;flex-direction:column}
-.prog-logo{font-size:26px;margin-bottom:4px;font-weight:900}
-.prog-logo.smiles{color:#f4720b}
-.prog-logo.latam{color:#e31837}
-.prog-logo.azul{color:#003087}
-.prog-logo.livelo{color:#e91e8c}
-.prog-logo.esfera{color:var(--card-logo-dark)}
-.prog-logo.tap{color:#006400}
-.prog-logo.iberia{color:#c41230}
-.prog-logo.aa{color:#0078d2}
-.prog-logo.cm{color:#0056a2}
-.prog-logo.lm{color:#00a859}
-.prog-logo.qatar{color:#5c0632}
-.prog-logo.outro{color:#666}
-/* bar lateral */
-.card-bar-wrap{position:absolute;right:8px;top:50px;bottom:14px;width:10px;display:flex;flex-direction:column;gap:3px}
+.card-bar-wrap{position:absolute;right:8px;top:50px;bottom:56px;width:10px;display:flex;flex-direction:column;gap:3px}
 .bar-segment{flex:1;border-radius:3px;background:var(--bar-empty)}
 .bar-segment.filled{background:#c9a84c}
 .bar-segment.filled.warn{background:#e07c00}
 .bar-segment.filled.danger{background:#c94c4c}
+.card-body{padding:12px 14px 8px;background:var(--card-bg);text-align:center;min-height:90px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.prog-logo{font-size:22px;margin-bottom:4px;font-weight:900}
+.prog-logo.smiles{color:#f4720b}.prog-logo.latam{color:#e31837}.prog-logo.azul{color:#003087}
+.prog-logo.livelo{color:#e91e8c}.prog-logo.esfera{color:var(--card-logo-dark)}.prog-logo.tap{color:#006400}
+.prog-logo.iberia{color:#c41230}.prog-logo.aa{color:#0078d2}.prog-logo.cm{color:#0056a2}
+.prog-logo.lm{color:#00a859}.prog-logo.qatar{color:#5c0632}.prog-logo.outro{color:#666}
 .card-stats{background:var(--card-stats);padding:8px 14px 10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
 .cs-col{text-align:center}
 .cs-label{font-size:9px;color:var(--cs-label);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
 .cs-val{font-size:12px;font-weight:700;color:var(--cs-val)}
-.cs-val.milh-ok{color:#1a7a35}
-.cs-val.milh-warn{color:#c97800}
-.cs-val.milh-bad{color:#c94c4c}
 .card-btns{background:var(--card-btns);padding:7px 8px;display:flex;gap:5px;flex-wrap:wrap}
 .cbtn{flex:1;padding:4px 6px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}
 .cbtn:hover{opacity:.8}
-.cbtn-buy{background:#4c9ac9;color:#fff}
-.cbtn-sell{background:#c94c4c;color:#fff}
-.cbtn-emit{background:#c9a84c;color:#fff}
-.cbtn-hist{background:#6b7a9a;color:#fff}
-.cbtn-edit{background:var(--card-btns);color:var(--text)}
-/* cpf counter badge */
-.cpf-badge{position:absolute;top:44px;right:22px;background:#1e3a5f;color:#7db8e8;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;z-index:2}
-
-/* TABLE */
+.cbtn-buy{background:#4c9ac9;color:#fff}.cbtn-emit{background:#c9a84c;color:#0a0f1e}
+.cbtn-hist{background:#6b7a9a;color:#fff}.cbtn-edit{background:var(--card-btns);color:var(--text)}
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{padding:9px 11px;text-align:left;color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+th{padding:9px 11px;text-align:left;color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg3)}
 td{padding:9px 11px;border-bottom:1px solid var(--border2);vertical-align:middle}
 tr:hover td{background:var(--row-hover)}
-
-/* FORM */
-input,select,textarea{width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;outline:none;font-family:Arial,sans-serif}
+input,select,textarea{width:100%;background:var(--inp-bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;outline:none;font-family:Arial,sans-serif}
 input:focus,select:focus{border-color:#c9a84c}
 label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
 .field{margin-bottom:11px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
-
-/* BUTTONS */
 .btn{padding:8px 16px;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:opacity .15s}
 .btn:hover{opacity:.85}
 .btn-primary{background:linear-gradient(135deg,#c9a84c,#e8c96d);color:#0a0f1e}
 .btn-secondary{background:var(--border);color:var(--muted2)}
 .btn-danger{background:#3a1010;color:#c94c4c}
 .btn-sm{padding:4px 10px;font-size:11px;border-radius:5px}
-
-/* BADGES */
 .badge{background:var(--border);color:var(--muted2);padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap}
-.badge-ok{background:#1a3a2a;color:#4cc97a}
-.badge-err{background:#3a1a1a;color:#c94c4c}
-.badge-warn{background:#2a2a1a;color:#c9a84c}
-
-/* MODAL */
+.badge-ok{background:#1a3a2a;color:#4cc97a}.badge-err{background:#3a1a1a;color:#c94c4c}.badge-warn{background:#2a2a1a;color:#c9a84c}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center;padding:16px}
 .modal-bg.open{display:flex}
 .modal{background:var(--bg3);border:1px solid var(--border);border-radius:14px;width:100%;max-width:600px;max-height:92vh;overflow:auto;padding:24px}
@@ -140,84 +96,53 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 .modal-title{color:#c9a84c;font-size:15px;font-weight:700}
 .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
-
-/* HIST MODAL */
 .hist-item{padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .hist-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-
-/* TOAST */
 #toast{position:fixed;bottom:20px;right:20px;padding:11px 18px;border-radius:8px;font-size:13px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.5)}
-
-/* MISC */
 .mono{font-family:monospace;color:var(--muted2)}
-.green{color:#4cc97a;font-weight:700}
-.red{color:#c94c4c;font-weight:700}
-.gold{color:#c9a84c;font-weight:700}
-.blue{color:#4c9ac9;font-weight:700}
+.green{color:#4cc97a;font-weight:700}.red{color:#c94c4c;font-weight:700}.gold{color:#c9a84c;font-weight:700}.blue{color:#4c9ac9;font-weight:700}
 .muted{color:var(--muted)}
 .empty{color:var(--muted);font-size:13px;text-align:center;padding:28px 0}
-
-.milh-ok{color:#1a7a35;font-weight:700}
-.milh-warn{color:#c97800;font-weight:700}
-.milh-bad{color:#c94c4c;font-weight:700}
-
-/* FILTROS */
+.milh-ok{color:#1a7a35;font-weight:700}.milh-warn{color:#c97800;font-weight:700}.milh-bad{color:#c94c4c;font-weight:700}
 .filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .filtros input,.filtros select{width:auto;flex:1;min-width:120px;max-width:220px}
-.filtro-grupo{display:flex;align-items:center;gap:6px}
-.filtro-label{color:var(--muted);font-size:11px;white-space:nowrap}
-
-/* CPF COUNTER */
-.cpf-counter{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-.cpf-dots{display:flex;gap:3px;flex-wrap:wrap}
+.cpf-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}
 .cpf-dot{width:10px;height:10px;border-radius:50%}
-.cpf-dot.used{background:#c94c4c}
-.cpf-dot.free{background:#4cc97a}
-
-@media(max-width:600px){
-  .hstats{display:none}
-  .row2,.row3{grid-template-columns:1fr}
-  .cards-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
-}
-
-/* LIGHT MODE OVERRIDES */
+.cpf-dot.used{background:#c94c4c}.cpf-dot.free{background:#4cc97a}
+.loading-overlay{position:fixed;inset:0;background:rgba(10,16,32,.85);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:#c9a84c;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 [data-theme="light"] .btn-secondary{background:#e2e6f0;color:#3a4a6a}
 [data-theme="light"] .btn-danger{background:#fce8e8;color:#c94c4c}
-[data-theme="light"] .badge{background:#e8ecf5;color:#4a5a7a}
 [data-theme="light"] .badge-ok{background:#e0f5ea;color:#1a7a35}
 [data-theme="light"] .badge-err{background:#fce8e8;color:#c94c4c}
 [data-theme="light"] .badge-warn{background:#fdf5e0;color:#8a6000}
-[data-theme="light"] .cbtn-hist{background:#9aaabb;color:#fff}
-[data-theme="light"] .card-stats .cs-val.milh-ok{color:#1a7a35}
-[data-theme="light"] table thead tr{background:var(--th-bg)}
-[data-theme="light"] .logo-sub{color:#9aaabb}
-[data-theme="light"] .tab{color:#7a8a9a}
-[data-theme="light"] .tab.active{color:#b8882c}
+[data-theme="light"] .milh-ok{color:#1a7a35}
 [data-theme="light"] .logo-title{color:#b8882c}
-[data-theme="light"] #header{border-bottom-color:#dde1ea}
-[data-theme="light"] .modal-close{color:#9aaabb}
-[data-theme="light"] #cp-milh-box,[data-theme="light"] #em-info{background:#f0f4fa;border-color:#dde1ea}
+[data-theme="light"] .tab.active{color:#b8882c;border-bottom-color:#b8882c}
+@media(max-width:600px){.hstats{display:none}.row2,.row3{grid-template-columns:1fr}.cards-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <div style="color:#c9a84c;font-size:14px">Carregando dados...</div>
+</div>
+
 <div id="header">
   <div id="header-top">
     <div class="logo">
       <div class="logo-icon">✈</div>
-      <div>
-        <div class="logo-title">GONEX VIAGENS</div>
-        <div class="logo-sub">Gestão de Milhas &amp; CPFs</div>
-      </div>
+      <div><div class="logo-title">GONEX VIAGENS</div><div class="logo-sub">Gestão de Milhas & CPFs</div></div>
     </div>
     <div class="hstats">
       <div class="hstat"><div class="hstat-v gold" id="h-milhas">0</div><div class="hstat-l">Milhas em carteira</div></div>
       <div class="hstat"><div class="hstat-v blue" id="h-cpfs">0</div><div class="hstat-l">CPFs ativos</div></div>
-      <div class="hstat"><div class="hstat-v" style="color:#c94c4c" id="h-investido">R$ 0</div><div class="hstat-l">Total investido</div></div>
+      <div class="hstat"><div class="hstat-v red" id="h-investido">R$ 0</div><div class="hstat-l">Total investido</div></div>
       <div class="hstat"><div class="hstat-v green" id="h-emitidas">0</div><div class="hstat-l">Milhas emitidas</div></div>
+      <button id="theme-toggle" onclick="toggleTheme()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:13px">🌙</button>
     </div>
-    <button id="theme-toggle" onclick="toggleTheme()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:13px;transition:all .2s" title="Alternar tema">🌙</button>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('cards')">Visão Geral</button>
@@ -227,19 +152,18 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 </div>
 
 <div id="content">
-
-  <!-- CARDS VIEW -->
+  <!-- CARDS -->
   <div id="tab-cards">
     <div class="summary-bar">
-      <div class="sum-card"><div class="sum-val gold" id="s-total-milhas">0</div><div class="sum-lbl">Total de milhas</div></div>
-      <div class="sum-card"><div class="sum-val blue" id="s-total-cpfs">0</div><div class="sum-lbl">CPFs / contas</div></div>
-      <div class="sum-card"><div class="sum-val" style="color:#9a4cc9" id="s-total-emit">0</div><div class="sum-lbl">Emissões</div></div>
-      <div class="sum-card"><div class="sum-val" id="s-milheiro-med">—</div><div class="sum-lbl">Milheiro médio</div></div>
-      <div class="sum-card"><div class="sum-val red" id="s-total-inv">R$ 0</div><div class="sum-lbl">Total investido</div></div>
+      <div class="sum-card"><div class="sum-val gold" id="s-milhas">0</div><div class="sum-lbl">Total de milhas</div></div>
+      <div class="sum-card"><div class="sum-val blue" id="s-cpfs">0</div><div class="sum-lbl">CPFs / contas</div></div>
+      <div class="sum-card"><div class="sum-val" style="color:#9a4cc9" id="s-emit">0</div><div class="sum-lbl">Emissões</div></div>
+      <div class="sum-card"><div class="sum-val" id="s-milh-med">—</div><div class="sum-lbl">Milheiro médio</div></div>
+      <div class="sum-card"><div class="sum-val red" id="s-inv">R$ 0</div><div class="sum-lbl">Total investido</div></div>
     </div>
     <div class="toolbar">
       <div class="filtros">
-        <span class="filtro-label">Filtrar:</span>
+        <span class="muted" style="font-size:11px">Filtrar:</span>
         <input placeholder="Nome / CPF…" id="f-busca" oninput="renderCards()" style="max-width:160px">
         <select id="f-prog" onchange="renderCards()" style="max-width:160px">
           <option value="">Todos os programas</option>
@@ -256,16 +180,10 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 
   <!-- CONTAS TABLE -->
   <div id="tab-contas" style="display:none">
-    <div class="toolbar">
-      <h2>Todas as contas</h2>
-      <button class="btn btn-primary" onclick="abrirModalConta()">+ Nova conta</button>
-    </div>
+    <div class="toolbar"><h2>Todas as contas</h2><button class="btn btn-primary" onclick="abrirModalConta()">+ Nova conta</button></div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr>
-          <th>Titular</th><th>Programa</th><th>CPF</th><th>Email</th>
-          <th>Saldo</th><th>CM (custo)</th><th>Emissões feitas</th><th>Limite CPF</th><th>CPFs livres</th><th>Ações</th>
-        </tr></thead>
+        <thead><tr><th>Titular</th><th>Programa</th><th>CPF</th><th>Email</th><th>Saldo</th><th>CM</th><th>Emissões</th><th>Limite</th><th>Livres</th><th>Ações</th></tr></thead>
         <tbody id="tbody-contas"></tbody>
       </table>
       <div id="empty-contas" class="empty" style="display:none">Nenhuma conta</div>
@@ -275,24 +193,15 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
   <!-- HISTORICO -->
   <div id="tab-historico" style="display:none">
     <div class="toolbar">
-      <h2>Histórico de movimentações</h2>
+      <h2>Histórico</h2>
       <div class="toolbar-right">
-        <select id="f-hist-tipo" onchange="renderHistorico()" style="width:160px">
-          <option value="">Todos</option>
-          <option value="compra">Compras</option>
-          <option value="emissao">Emissões</option>
-        </select>
-        <select id="f-hist-conta" onchange="renderHistorico()" style="width:180px">
-          <option value="">Todas as contas</option>
-        </select>
+        <select id="f-hist-tipo" onchange="renderHistorico()" style="width:140px"><option value="">Todos</option><option value="compra">Compras</option><option value="emissao">Emissões</option></select>
+        <select id="f-hist-conta" onchange="renderHistorico()" style="width:180px"><option value="">Todas as contas</option></select>
       </div>
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr>
-          <th>Data</th><th>Tipo</th><th>Titular</th><th>Programa</th><th>CPF</th>
-          <th>Milhas</th><th>Valor (R$)</th><th>Milheiro</th><th>Rota / Fonte</th><th>Status / Obs</th>
-        </tr></thead>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Titular</th><th>Programa</th><th>Milhas</th><th>Valor/Taxas</th><th>Milheiro</th><th>Rota/Fonte</th><th>Status</th></tr></thead>
         <tbody id="tbody-hist"></tbody>
       </table>
       <div id="empty-hist" class="empty" style="display:none">Nenhuma movimentação</div>
@@ -303,36 +212,28 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 <!-- MODAL CONTA -->
 <div class="modal-bg" id="modal-conta">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="mc-title">Nova Conta</div>
-      <button class="modal-close" onclick="fecharModal('modal-conta')">×</button>
-    </div>
+    <div class="modal-header"><div class="modal-title" id="mc-title">Nova Conta</div><button class="modal-close" onclick="fecharModal('modal-conta')">×</button></div>
     <input type="hidden" id="c-id">
     <div class="row2">
-      <div class="field"><label class="lbl">Titular (nome) *</label><input id="c-dono" placeholder="Ex: ANDREY"></div>
+      <div class="field"><label class="lbl">Titular *</label><input id="c-dono" placeholder="Ex: ANDREY"></div>
       <div class="field"><label class="lbl">Programa *</label>
-        <select id="c-prog">
-          <option>Smiles (GOL)</option><option>Latam Pass</option><option>TudoAzul</option>
-          <option>Livelo</option><option>Esfera</option><option>TAP Miles&amp;Go</option>
-          <option>Iberia Avios</option><option>AAdvantage</option><option>ConnectMiles</option>
-          <option>LifeMiles</option><option>Air Europa Suma</option><option>Qatar Privilege</option><option>Outro</option>
-        </select>
+        <select id="c-prog"><option>Smiles (GOL)</option><option>Latam Pass</option><option>TudoAzul</option><option>Livelo</option><option>Esfera</option><option>TAP Miles&Go</option><option>Iberia Avios</option><option>AAdvantage</option><option>ConnectMiles</option><option>LifeMiles</option><option>Air Europa Suma</option><option>Qatar Privilege</option><option>Outro</option></select>
       </div>
     </div>
     <div class="row2">
-      <div class="field"><label class="lbl">CPF *</label><input id="c-cpf" placeholder="000.000.000-00"></div>
+      <div class="field"><label class="lbl">CPF</label><input id="c-cpf" placeholder="000.000.000-00"></div>
       <div class="field"><label class="lbl">Email</label><input id="c-email"></div>
     </div>
     <div class="row2">
-      <div class="field"><label class="lbl">Senha</label><input id="c-senha" placeholder="Senha do programa"></div>
+      <div class="field"><label class="lbl">Senha</label><input id="c-senha"></div>
       <div class="field"><label class="lbl">Saldo atual (milhas)</label><input type="number" id="c-saldo" value="0"></div>
     </div>
     <div class="row3">
-      <div class="field"><label class="lbl">Limite de CPFs (emissões)</label><input type="number" id="c-limite" value="25" min="1"></div>
-      <div class="field"><label class="lbl">CPFs já usados</label><input type="number" id="c-usados" value="0" min="0"></div>
-      <div class="field"><label class="lbl">Custo do milheiro (R$)</label><input type="number" step="0.01" id="c-cm" value="0" placeholder="Ex: 14,82"></div>
+      <div class="field"><label class="lbl">Limite CPFs</label><input type="number" id="c-limite" value="25"></div>
+      <div class="field"><label class="lbl">CPFs já usados</label><input type="number" id="c-usados" value="0"></div>
+      <div class="field"><label class="lbl">Custo milheiro (R$)</label><input type="number" step="0.01" id="c-cm" value="0"></div>
     </div>
-    <div class="field"><label class="lbl">Obs / localizador</label><input id="c-obs"></div>
+    <div class="field"><label class="lbl">Obs</label><input id="c-obs"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="fecharModal('modal-conta')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarConta()">Salvar</button>
@@ -343,26 +244,21 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 <!-- MODAL COMPRA -->
 <div class="modal-bg" id="modal-compra">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">💰 Registrar Compra</div>
-      <button class="modal-close" onclick="fecharModal('modal-compra')">×</button>
-    </div>
+    <div class="modal-header"><div class="modal-title">💰 Registrar Compra</div><button class="modal-close" onclick="fecharModal('modal-compra')">×</button></div>
     <input type="hidden" id="cp-id">
     <div class="row2">
       <div class="field"><label class="lbl">Data</label><input type="date" id="cp-data"></div>
-      <div class="field"><label class="lbl">Conta</label><select id="cp-conta" onchange="onContaCompra()"></select></div>
+      <div class="field"><label class="lbl">Conta *</label><select id="cp-conta" onchange="onContaCompra()"></select></div>
     </div>
     <div class="row2">
       <div class="field"><label class="lbl">Milhas *</label><input type="number" id="cp-milhas" value="0" oninput="calcCpMilh()"></div>
       <div class="field"><label class="lbl">Valor pago (R$) *</label><input type="number" step="0.01" id="cp-valor" value="0" oninput="calcCpMilh()"></div>
     </div>
-    <div id="cp-milh-box" style="background:var(--bg4);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:12px;font-size:12px">
+    <div id="cp-milh-box" style="background:var(--inp-bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:12px;font-size:12px">
       Milheiro: <strong id="cp-milh-v">—</strong> &nbsp;|&nbsp; Conta: <span id="cp-conta-lbl" class="gold">—</span>
     </div>
     <div class="row2">
-      <div class="field"><label class="lbl">Fonte</label>
-        <select id="cp-fonte"><option>Livelo</option><option>Esfera</option><option>iupp</option><option>Átomos</option><option>C6</option><option>Curta Aí</option><option>Caixa</option><option>Compra Direta</option><option>Outro</option></select>
-      </div>
+      <div class="field"><label class="lbl">Fonte</label><select id="cp-fonte"><option>Livelo</option><option>Esfera</option><option>iupp</option><option>Átomos</option><option>C6</option><option>Curta Aí</option><option>Caixa</option><option>Compra Direta</option><option>Outro</option></select></div>
       <div class="field"><label class="lbl">Cartão</label><input id="cp-cartao" placeholder="Ex: C6 Infinite"></div>
     </div>
     <div class="row2">
@@ -379,19 +275,14 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 <!-- MODAL EMISSAO -->
 <div class="modal-bg" id="modal-emissao">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">🛫 Registrar Emissão</div>
-      <button class="modal-close" onclick="fecharModal('modal-emissao')">×</button>
-    </div>
+    <div class="modal-header"><div class="modal-title">🛫 Registrar Emissão</div><button class="modal-close" onclick="fecharModal('modal-emissao')">×</button></div>
     <input type="hidden" id="em-id">
     <div class="row2">
       <div class="field"><label class="lbl">Data</label><input type="date" id="em-data"></div>
-      <div class="field"><label class="lbl">Conta</label><select id="em-conta" onchange="onContaEmissao()"></select></div>
+      <div class="field"><label class="lbl">Conta *</label><select id="em-conta" onchange="onContaEmissao()"></select></div>
     </div>
-    <div id="em-info" style="background:var(--bg4);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:11px;font-size:12px;display:none">
-      Saldo: <strong id="em-saldo" class="gold">0</strong> milhas &nbsp;|&nbsp;
-      CPFs livres: <strong id="em-cpfs-livres" class="green">0</strong> &nbsp;|&nbsp;
-      CM: <strong id="em-cm" class="milh-ok">—</strong>
+    <div id="em-info" style="background:var(--inp-bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:11px;font-size:12px;display:none">
+      Saldo: <strong id="em-saldo" class="gold">0</strong> &nbsp;|&nbsp; CPFs livres: <strong id="em-cpfs-livres" class="green">0</strong> &nbsp;|&nbsp; CM: <strong id="em-cm">—</strong>
     </div>
     <div class="row2">
       <div class="field"><label class="lbl">Rota *</label><input id="em-rota" placeholder="GRU → DOH → BKK"></div>
@@ -400,18 +291,14 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
     <div class="row3">
       <div class="field"><label class="lbl">Milhas *</label><input type="number" id="em-milhas" value="0"></div>
       <div class="field"><label class="lbl">PAX</label><input type="number" id="em-pax" value="1" min="1"></div>
-      <div class="field"><label class="lbl">CPFs usados nesta emissão</label><input type="number" id="em-cpfs-usados" value="1" min="1"></div>
+      <div class="field"><label class="lbl">CPFs usados</label><input type="number" id="em-cpfs-usados" value="1" min="1"></div>
     </div>
     <div class="row2">
-      <div class="field"><label class="lbl">Classe</label>
-        <select id="em-classe"><option>Econômica</option><option>Econômica Premium</option><option selected>Executiva</option><option>Primeira Classe</option></select>
-      </div>
+      <div class="field"><label class="lbl">Classe</label><select id="em-classe"><option>Econômica</option><option>Econômica Premium</option><option selected>Executiva</option><option>Primeira Classe</option></select></div>
       <div class="field"><label class="lbl">Taxas (R$)</label><input type="number" step="0.01" id="em-taxas" value="0"></div>
     </div>
     <div class="row2">
-      <div class="field"><label class="lbl">Status</label>
-        <select id="em-status"><option>Emitido</option><option>Cancelado</option><option>Aguardando</option></select>
-      </div>
+      <div class="field"><label class="lbl">Status</label><select id="em-status"><option>Emitido</option><option>Cancelado</option><option>Aguardando</option></select></div>
       <div class="field"><label class="lbl">Obs</label><input id="em-obs"></div>
     </div>
     <div class="modal-footer">
@@ -421,13 +308,10 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
   </div>
 </div>
 
-<!-- MODAL HISTORICO CONTA -->
+<!-- MODAL HIST CONTA -->
 <div class="modal-bg" id="modal-hist-conta">
-  <div class="modal" style="max-width:700px">
-    <div class="modal-header">
-      <div class="modal-title" id="mhc-title">Histórico da conta</div>
-      <button class="modal-close" onclick="fecharModal('modal-hist-conta')">×</button>
-    </div>
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header"><div class="modal-title" id="mhc-title">Histórico</div><button class="modal-close" onclick="fecharModal('modal-hist-conta')">×</button></div>
     <div id="mhc-body"></div>
   </div>
 </div>
@@ -435,18 +319,20 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
 <div id="toast"></div>
 
 <script>
-// ── DATA ─────────────────────────────────────────────────────────────────────
-const PROGRAMAS = ["Smiles (GOL)","Latam Pass","TudoAzul","Livelo","Esfera","TAP Miles&Go","Iberia Avios","AAdvantage","ConnectMiles","LifeMiles","Air Europa Suma","Qatar Privilege","Outro"];
-const FONTES = ["Livelo","Esfera","iupp","Átomos","C6","Curta Aí","Caixa","Compra Direta","Outro"];
+// ── CONFIG SUPABASE ──────────────────────────────────────────────────────────
+const SUPA_URL = 'https://xqsebzfgdizxjthnycgo.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxc2ViemZnZGl6eGp0aG55Y2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODA4MjQsImV4cCI6MjA5MjQ1NjgyNH0.FDNDH4apo8cg8yfxQBPP5LA6WebQnB9QKjvH579lplo'
+const headers = {'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation'}
 
-function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
-function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+async function sb(method, table, body, params='') {
+  const url = `${SUPA_URL}/rest/v1/${table}${params}`
+  const res = await fetch(url, {method, headers: {...headers, ...(method==='GET'?{'Accept':'application/json'}:{})}, body: body?JSON.stringify(body):undefined})
+  if (!res.ok) { const e = await res.text(); throw new Error(e) }
+  return method==='DELETE'?null:res.json()
+}
 
-let contas = ld('gnx2-contas',[]);
-let compras = ld('gnx2-compras',[]);
-let emissoes = ld('gnx2-emissoes',[]);
-
-function persist(){sv('gnx2-contas',contas);sv('gnx2-compras',compras);sv('gnx2-emissoes',emissoes)}
+// ── STATE ────────────────────────────────────────────────────────────────────
+let contas=[], compras=[], emissoes=[]
 
 // ── UTILS ────────────────────────────────────────────────────────────────────
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2)
@@ -456,64 +342,40 @@ const fmtR=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BR
 const fmtM=n=>`R$ ${Number(n||0).toFixed(2).replace('.',',')}`
 const calcM=(v,m)=>m>0?(v/m)*1000:0
 const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-function mc(m){if(!m||m===0)return '';if(m<=20)return 'milh-ok';if(m<=25)return 'milh-warn';return 'milh-bad'}
-
-// custo milheiro de uma conta (baseado nas compras)
-function cmDaConta(cId){
-  const cprs=compras.filter(c=>c.contaId===cId)
-  const tv=cprs.reduce((s,c)=>s+(c.valor||0),0)
-  const tm=cprs.reduce((s,c)=>s+(c.milhas||0),0)
-  return calcM(tv,tm)
-}
-
-// cpfs usados em emissões de uma conta
-function cpfsUsados(cId){
-  return emissoes.filter(e=>e.contaId===cId&&e.status==='Emitido').reduce((s,e)=>s+(e.cpfsUsados||1),0)
-}
-
-// emissões de uma conta
-function emissoesCount(cId){return emissoes.filter(e=>e.contaId===cId&&e.status==='Emitido').length}
-
-// logo HTML por programa
-function logoHTML(prog){
-  const map={
-    'Smiles (GOL)':`<div class="prog-logo smiles">Smiles</div>`,
-    'Latam Pass':`<div class="prog-logo latam" style="font-size:20px;line-height:1.1">LATAM<br><span style="font-size:14px">PASS ➔</span></div>`,
-    'TudoAzul':`<div class="prog-logo azul">TudoAzul</div>`,
-    'Livelo':`<div class="prog-logo livelo" style="font-size:22px">livelo</div>`,
-    'Esfera':`<div class="prog-logo esfera" style="font-size:22px">Esfera_</div>`,
-    'TAP Miles&Go':`<div class="prog-logo tap" style="font-size:20px">TAP<br><span style="font-size:12px">Miles&amp;Go</span></div>`,
-    'Iberia Avios':`<div class="prog-logo iberia" style="font-size:20px">Iberia<br><span style="font-size:12px">Avios</span></div>`,
-    'AAdvantage':`<div class="prog-logo aa" style="font-size:18px">AAdvantage</div>`,
-    'ConnectMiles':`<div class="prog-logo cm" style="font-size:17px">Connect<br>Miles</div>`,
-    'LifeMiles':`<div class="prog-logo lm" style="font-size:18px">LifeMiles</div>`,
-    'Air Europa Suma':`<div class="prog-logo outro" style="font-size:14px">Air Europa<br>Suma</div>`,
-    'Qatar Privilege':`<div class="prog-logo qatar" style="font-size:15px">Qatar<br>Privilege</div>`,
-  }
-  return map[prog]||`<div class="prog-logo outro" style="font-size:16px">${esc(prog)}</div>`
-}
+function mc(m){if(!m||m<=0)return '';if(m<=20)return 'milh-ok';if(m<=25)return 'milh-warn';return 'milh-bad'}
+function cmDaConta(cId){const cprs=compras.filter(c=>c.conta_id===cId);const tv=cprs.reduce((s,c)=>s+(c.valor||0),0);const tm=cprs.reduce((s,c)=>s+(c.milhas||0),0);return calcM(tv,tm)}
+function cpfsUsados(cId){return emissoes.filter(e=>e.conta_id===cId&&e.status==='Emitido').reduce((s,e)=>s+(e.cpfs_usados||1),0)}
+function emissoesCount(cId){return emissoes.filter(e=>e.conta_id===cId&&e.status==='Emitido').length}
 
 // ── TOAST ────────────────────────────────────────────────────────────────────
-let tt;
-function toast(msg,ok=true){
-  const t=document.getElementById('toast')
-  t.textContent=msg;t.style.background=ok?'#1a5c2e':'#7a1c1c';t.style.color='#fff';t.style.display='block'
-  clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',3000)
+let tt
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#1a5c2e':'#7a1c1c';t.style.color='#fff';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',3500)}
+
+// ── LOADING ──────────────────────────────────────────────────────────────────
+function setLoading(v){document.getElementById('loading-overlay').style.display=v?'flex':'none'}
+
+// ── LOAD DATA ────────────────────────────────────────────────────────────────
+async function loadAll(){
+  setLoading(true)
+  try {
+    [contas, compras, emissoes] = await Promise.all([
+      sb('GET','contas','',`?select=*&order=created_at.asc`),
+      sb('GET','compras','',`?select=*&order=created_at.desc`),
+      sb('GET','emissoes','',`?select=*&order=created_at.desc`)
+    ])
+    updateAll()
+  } catch(e){ toast('Erro ao carregar dados: '+e.message, false) }
+  setLoading(false)
 }
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
 function showTab(n){
-  ['cards','contas','historico'].forEach(t=>{
-    document.getElementById('tab-'+t).style.display=t===n?'':'none'
-  })
+  ['cards','contas','historico'].forEach(t=>document.getElementById('tab-'+t).style.display=t===n?'':'none')
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['cards','contas','historico'][i]===n))
   updateAll()
 }
 
-// ── UPDATE ALL ───────────────────────────────────────────────────────────────
-function updateAll(){
-  updateHeader();populateFilters();renderCards();renderContasTable();renderHistorico()
-}
+function updateAll(){updateHeader();populateFilters();renderCards();renderContasTable();renderHistorico()}
 
 function updateHeader(){
   const tm=contas.reduce((s,c)=>s+(c.saldo||0),0)
@@ -523,14 +385,12 @@ function updateHeader(){
   document.getElementById('h-cpfs').textContent=contas.length
   document.getElementById('h-investido').textContent=fmtR(ti)
   document.getElementById('h-emitidas').textContent=fmtN(te)
-  document.getElementById('s-total-milhas').textContent=fmtN(tm)
-  document.getElementById('s-total-cpfs').textContent=contas.length
-  document.getElementById('s-total-emit').textContent=emissoes.filter(e=>e.status==='Emitido').length
-  document.getElementById('s-total-inv').textContent=fmtR(ti)
-  const tm2=compras.reduce((s,c)=>s+(c.milhas||0),0)
-  const mm=calcM(ti,tm2)
-  const me=document.getElementById('s-milheiro-med')
-  me.textContent=mm>0?fmtM(mm):'—';me.className='sum-val '+mc(mm)
+  document.getElementById('s-milhas').textContent=fmtN(tm)
+  document.getElementById('s-cpfs').textContent=contas.length
+  document.getElementById('s-emit').textContent=emissoes.filter(e=>e.status==='Emitido').length
+  document.getElementById('s-inv').textContent=fmtR(ti)
+  const tm2=compras.reduce((s,c)=>s+(c.milhas||0),0);const mm=calcM(ti,tm2)
+  const me=document.getElementById('s-milh-med');me.textContent=mm>0?fmtM(mm):'—';me.className='sum-val '+mc(mm)
 }
 
 function populateFilters(){
@@ -538,10 +398,14 @@ function populateFilters(){
   const vp=fp?.value;const vd=fd?.value
   if(fp){fp.innerHTML='<option value="">Todos os programas</option>'+[...new Set(contas.map(c=>c.prog))].map(p=>`<option${p===vp?' selected':''}>${esc(p)}</option>`).join('')}
   if(fd){fd.innerHTML='<option value="">Todos os titulares</option>'+[...new Set(contas.map(c=>c.dono))].sort().map(d=>`<option${d===vd?' selected':''}>${esc(d)}</option>`).join('')}
-  // hist
-  const fhc=document.getElementById('f-hist-conta')
-  const vhc=fhc?.value
+  const fhc=document.getElementById('f-hist-conta');const vhc=fhc?.value
   if(fhc){fhc.innerHTML='<option value="">Todas as contas</option>'+contas.map(c=>`<option value="${c.id}"${c.id===vhc?' selected':''}>${esc(c.dono)} — ${esc(c.prog)}</option>`).join('')}
+}
+
+// ── LOGO HTML ────────────────────────────────────────────────────────────────
+function logoHTML(prog){
+  const map={'Smiles (GOL)':`<div class="prog-logo smiles">Smiles</div>`,'Latam Pass':`<div class="prog-logo latam" style="font-size:18px;line-height:1.2">LATAM<br><span style="font-size:13px">PASS ➔</span></div>`,'TudoAzul':`<div class="prog-logo azul">TudoAzul</div>`,'Livelo':`<div class="prog-logo livelo">livelo</div>`,'Esfera':`<div class="prog-logo esfera">Esfera_</div>`,'TAP Miles&Go':`<div class="prog-logo tap" style="font-size:18px">TAP<br><span style="font-size:12px">Miles&amp;Go</span></div>`,'Iberia Avios':`<div class="prog-logo iberia" style="font-size:18px">Iberia<br><span style="font-size:12px">Avios</span></div>`,'AAdvantage':`<div class="prog-logo aa" style="font-size:16px">AAdvantage</div>`,'ConnectMiles':`<div class="prog-logo cm" style="font-size:16px">Connect<br>Miles</div>`,'LifeMiles':`<div class="prog-logo lm" style="font-size:17px">LifeMiles</div>`,'Air Europa Suma':`<div class="prog-logo outro" style="font-size:13px">Air Europa<br>Suma</div>`,'Qatar Privilege':`<div class="prog-logo qatar" style="font-size:14px">Qatar<br>Privilege</div>`}
+  return map[prog]||`<div class="prog-logo outro" style="font-size:15px">${esc(prog)}</div>`
 }
 
 // ── CARDS ────────────────────────────────────────────────────────────────────
@@ -549,90 +413,49 @@ function renderCards(){
   const busca=(document.getElementById('f-busca')?.value||'').toLowerCase()
   const fp=document.getElementById('f-prog')?.value||''
   const fd=document.getElementById('f-dono')?.value||''
-  const lista=contas.filter(c=>
-    (!busca||(c.dono||'').toLowerCase().includes(busca)||(c.cpf||'').includes(busca))&&
-    (!fp||c.prog===fp)&&(!fd||c.dono===fd)
-  )
-  const grid=document.getElementById('cards-grid')
-  const emp=document.getElementById('empty-cards')
+  const lista=contas.filter(c=>(!busca||(c.dono||'').toLowerCase().includes(busca)||(c.cpf||'').includes(busca))&&(!fp||c.prog===fp)&&(!fd||c.dono===fd))
+  const grid=document.getElementById('cards-grid');const emp=document.getElementById('empty-cards')
   if(!lista.length){grid.innerHTML='';emp.style.display='';return}
   emp.style.display='none'
-  grid.innerHTML=lista.map(c=>cardHTML(c)).join('')
-}
-
-function cardHTML(c){
-  const limite=c.limite||25
-  const usados=cpfsUsados(c.id)+(c.usadosManual||0)
-  const livres=Math.max(0,limite-usados)
-  const pct=limite>0?usados/limite:0
-  const barColor=pct>=1?'danger':pct>=0.7?'warn':''
-  // barra lateral: até 25 segmentos
-  const segs=Math.min(limite,25)
-  const usadosSegs=Math.round(pct*segs)
-  const barsHTML=Array.from({length:segs},(_,i)=>{
-    const filled=i<usadosSegs
-    return `<div class="bar-segment${filled?' filled '+barColor:''}"></div>`
-  }).join('')
-
-  // CM real (compras) ou manual
-  const cmReal=cmDaConta(c.id)
-  const cm=cmReal>0?cmReal:(c.cm||0)
-  const rs=c.saldo>0&&cm>0?c.saldo/1000*cm:0
-
-  const headerBg=pct>=1?'#5a1a1a':pct>=0.7?'#3a2e00':'#1c2a1c'
-
-  return `<div class="conta-card" id="card-${c.id}">
-    <div class="card-header" style="background:${headerBg}">
-      <span class="card-owner">${esc(c.dono)}</span>
-      <div class="card-actions-top">
+  grid.innerHTML=lista.map(c=>{
+    const limite=c.limite||25;const usados=cpfsUsados(c.id)+(c.usados_manual||0);const livres=Math.max(0,limite-usados)
+    const pct=limite>0?usados/limite:0;const barColor=pct>=1?'danger':pct>=0.7?'warn':''
+    const segs=Math.min(limite,25);const usadosSegs=Math.round(pct*segs)
+    const barsHTML=Array.from({length:segs},(_,i)=>`<div class="bar-segment${i<usadosSegs?' filled '+barColor:''}"></div>`).join('')
+    const cmReal=cmDaConta(c.id);const cm=cmReal>0?cmReal:(c.cm||0)
+    const rs=c.saldo>0&&cm>0?c.saldo/1000*cm:0
+    const hBg=pct>=1?'#5a1a1a':pct>=0.7?'#3a2e00':'#1c2a1c'
+    return `<div class="conta-card">
+      <div class="card-header" style="background:${hBg}">
+        <span class="card-owner">${esc(c.dono)}</span>
         <span style="font-size:10px;color:#aaa">${livres}/${limite} livres</span>
       </div>
-    </div>
-    <div class="card-bar-wrap">${barsHTML}</div>
-    <div class="card-body">
-      ${logoHTML(c.prog)}
-      <div style="font-size:10px;color:var(--card-sub);margin-top:4px">${esc(c.cpf||'')}</div>
-    </div>
-    <div class="card-stats">
-      <div class="cs-col"><div class="cs-label">Milhas</div><div class="cs-val">${fmtN(c.saldo)}</div></div>
-      <div class="cs-col"><div class="cs-label">CM (R$)</div><div class="cs-val ${mc(cm)}">${cm>0?cm.toFixed(2).replace('.',','):'—'}</div></div>
-      <div class="cs-col"><div class="cs-label">R$</div><div class="cs-val">${rs>0?fmtR(rs).replace('R$\u00a0','').replace('R$ ',''):'—'}</div></div>
-    </div>
-    <div class="card-btns">
-      <button class="cbtn cbtn-buy" onclick="abrirCompra('${c.id}')">+ Comprar</button>
-      <button class="cbtn cbtn-emit" onclick="abrirEmissao('${c.id}')">✈ Emitir</button>
-      <button class="cbtn cbtn-hist" onclick="abrirHistConta('${c.id}')">≡</button>
-      <button class="cbtn cbtn-edit" onclick="editarConta('${c.id}')">✎</button>
-    </div>
-  </div>`
+      <div class="card-bar-wrap">${barsHTML}</div>
+      <div class="card-body">${logoHTML(c.prog)}<div style="font-size:10px;color:var(--card-sub);margin-top:4px">${esc(c.cpf||'')}</div></div>
+      <div class="card-stats">
+        <div class="cs-col"><div class="cs-label">Milhas</div><div class="cs-val">${fmtN(c.saldo)}</div></div>
+        <div class="cs-col"><div class="cs-label">CM (R$)</div><div class="cs-val ${mc(cm)}">${cm>0?cm.toFixed(2).replace('.',','):'—'}</div></div>
+        <div class="cs-col"><div class="cs-label">R$</div><div class="cs-val">${rs>0?fmtR(rs).replace('R$\u00a0','').replace('R$ ',''):'—'}</div></div>
+      </div>
+      <div class="card-btns">
+        <button class="cbtn cbtn-buy" onclick="abrirCompra('${c.id}')">+ Comprar</button>
+        <button class="cbtn cbtn-emit" onclick="abrirEmissao('${c.id}')">✈ Emitir</button>
+        <button class="cbtn cbtn-hist" onclick="abrirHistConta('${c.id}')">≡</button>
+        <button class="cbtn cbtn-edit" onclick="editarConta('${c.id}')">✎</button>
+      </div>
+    </div>`
+  }).join('')
 }
 
 // ── CONTAS TABLE ─────────────────────────────────────────────────────────────
 function renderContasTable(){
-  const tb=document.getElementById('tbody-contas')
-  const emp=document.getElementById('empty-contas')
+  const tb=document.getElementById('tbody-contas');const emp=document.getElementById('empty-contas')
   if(!contas.length){tb.innerHTML='';emp.style.display='';return}
   emp.style.display='none'
   tb.innerHTML=contas.map(c=>{
-    const limite=c.limite||25
-    const usados=cpfsUsados(c.id)+(c.usadosManual||0)
-    const livres=Math.max(0,limite-usados)
+    const limite=c.limite||25;const usados=cpfsUsados(c.id)+(c.usados_manual||0);const livres=Math.max(0,limite-usados)
     const cm=cmDaConta(c.id)||(c.cm||0)
-    return `<tr>
-      <td><strong>${esc(c.dono)}</strong></td>
-      <td><span class="badge">${esc(c.prog)}</span></td>
-      <td><span class="mono">${esc(c.cpf)}</span></td>
-      <td><span class="muted" style="font-size:11px">${esc(c.email||'—')}</span></td>
-      <td><span class="gold">${fmtN(c.saldo)}</span></td>
-      <td><span class="${mc(cm)}">${cm>0?fmtM(cm):'—'}</span></td>
-      <td>${emissoesCount(c.id)}</td>
-      <td>${limite}</td>
-      <td><span class="${livres===0?'red':livres<=5?'gold':'green'}">${livres}</span></td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-secondary btn-sm" onclick="editarConta('${c.id}')">Editar</button>
-        <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="excluirConta('${c.id}')">✕</button>
-      </td>
-    </tr>`
+    return `<tr><td><strong>${esc(c.dono)}</strong></td><td><span class="badge">${esc(c.prog)}</span></td><td><span class="mono">${esc(c.cpf||'—')}</span></td><td class="muted" style="font-size:11px">${esc(c.email||'—')}</td><td class="gold">${fmtN(c.saldo)}</td><td><span class="${mc(cm)}">${cm>0?fmtM(cm):'—'}</span></td><td>${emissoesCount(c.id)}</td><td>${limite}</td><td><span class="${livres===0?'red':livres<=5?'gold':'green'}">${livres}</span></td><td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editarConta('${c.id}')">Editar</button> <button class="btn btn-danger btn-sm" onclick="excluirConta('${c.id}')">✕</button></td></tr>`
   }).join('')
 }
 
@@ -640,127 +463,84 @@ function renderContasTable(){
 function renderHistorico(){
   const tipo=document.getElementById('f-hist-tipo')?.value||''
   const cId=document.getElementById('f-hist-conta')?.value||''
-  const all=[
-    ...compras.map(c=>({...c,_t:'compra'})),
-    ...emissoes.map(e=>({...e,_t:'emissao'}))
-  ].filter(x=>(!tipo||x._t===tipo)&&(!cId||x.contaId===cId))
-   .sort((a,b)=>(b.data||'').localeCompare(a.data||''))
-  const tb=document.getElementById('tbody-hist')
-  const emp=document.getElementById('empty-hist')
+  const all=[...compras.map(c=>({...c,_t:'compra'})),...emissoes.map(e=>({...e,_t:'emissao'}))].filter(x=>(!tipo||x._t===tipo)&&(!cId||x.conta_id===cId)).sort((a,b)=>(b.data||'').localeCompare(a.data||''))
+  const tb=document.getElementById('tbody-hist');const emp=document.getElementById('empty-hist')
   if(!all.length){tb.innerHTML='';emp.style.display='';return}
   emp.style.display='none'
+  const stC={Emitido:'badge-ok',Cancelado:'badge-err',Aguardando:'badge-warn'}
   tb.innerHTML=all.map(x=>{
     const m=x._t==='compra'?calcM(x.valor,x.milhas):0
-    const sinal=x._t==='compra'?'+':'-'
-    const cor=x._t==='compra'?'#4c9ac9':'#c94c4c'
-    const stBadge=x._t==='emissao'?`<span class="badge ${x.status==='Emitido'?'badge-ok':x.status==='Cancelado'?'badge-err':'badge-warn'}">${esc(x.status)}</span>`:'<span class="badge badge-ok">Concluído</span>'
-    return `<tr>
-      <td>${x.data||'—'}</td>
-      <td>${x._t==='compra'?'💰 Compra':'🛫 Emissão'}</td>
-      <td><strong>${esc(x.nomeConta||'—')}</strong></td>
-      <td><span class="badge">${esc(x.companhia||x.prog||'—')}</span></td>
-      <td><span class="mono">${esc(x.cpf||'—')}</span></td>
-      <td style="color:${cor};font-weight:700">${sinal}${fmtN(x.milhas)}</td>
-      <td>${x._t==='compra'?fmtR(x.valor||0):fmtR(x.taxas||0)}</td>
-      <td>${m>0?`<span class="${mc(m)}">${fmtM(m)}</span>`:'—'}</td>
-      <td>${esc(x._t==='compra'?x.fonte||'—':x.rota||'—')}</td>
-      <td>${stBadge}</td>
-    </tr>`
+    return `<tr><td>${x.data||'—'}</td><td>${x._t==='compra'?'💰 Compra':'🛫 Emissão'}</td><td><strong>${esc(x.nome_conta||'—')}</strong></td><td><span class="badge">${esc(x.companhia||'—')}</span></td><td style="color:${x._t==='compra'?'#4c9ac9':'#c94c4c'};font-weight:700">${x._t==='compra'?'+':'-'}${fmtN(x.milhas)}</td><td>${x._t==='compra'?fmtR(x.valor||0):fmtR(x.taxas||0)}</td><td>${m>0?`<span class="${mc(m)}">${fmtM(m)}</span>`:'—'}</td><td>${esc(x._t==='compra'?x.fonte||'—':x.rota||'—')}</td><td>${x._t==='emissao'?`<span class="badge ${stC[x.status]||''}">${esc(x.status)}</span>`:'<span class="badge badge-ok">OK</span>'}</td></tr>`
   }).join('')
 }
 
 // ── HIST CONTA ───────────────────────────────────────────────────────────────
 function abrirHistConta(cId){
-  const c=contas.find(x=>x.id===cId)
-  if(!c) return
+  const c=contas.find(x=>x.id===cId);if(!c)return
   document.getElementById('mhc-title').textContent=`${c.dono} — ${c.prog}`
-  const all=[
-    ...compras.filter(x=>x.contaId===cId).map(x=>({...x,_t:'compra'})),
-    ...emissoes.filter(x=>x.contaId===cId).map(x=>({...x,_t:'emissao'}))
-  ].sort((a,b)=>(b.data||'').localeCompare(a.data||''))
-
-  const limite=c.limite||25
-  const usados=cpfsUsados(cId)+(c.usadosManual||0)
-  const cm=cmDaConta(cId)||(c.cm||0)
-
-  let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-    <div class="sum-card"><div class="sum-val gold">${fmtN(c.saldo)}</div><div class="sum-lbl">Saldo atual</div></div>
-    <div class="sum-card"><div class="sum-val ${mc(cm)}">${cm>0?fmtM(cm):'—'}</div><div class="sum-lbl">Custo do milheiro</div></div>
-    <div class="sum-card"><div class="sum-val ${usados>=limite?'red':'green'}">${Math.max(0,limite-usados)} / ${limite}</div><div class="sum-lbl">CPFs livres</div></div>
+  const all=[...compras.filter(x=>x.conta_id===cId).map(x=>({...x,_t:'compra'})),...emissoes.filter(x=>x.conta_id===cId).map(x=>({...x,_t:'emissao'}))].sort((a,b)=>(b.data||'').localeCompare(a.data||''))
+  const limite=c.limite||25;const usados=cpfsUsados(cId)+(c.usados_manual||0);const cm=cmDaConta(cId)||(c.cm||0)
+  let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+    <div class="sum-card"><div class="sum-val gold">${fmtN(c.saldo)}</div><div class="sum-lbl">Saldo</div></div>
+    <div class="sum-card"><div class="sum-val ${mc(cm)}">${cm>0?fmtM(cm):'—'}</div><div class="sum-lbl">Custo milheiro</div></div>
+    <div class="sum-card"><div class="sum-val ${usados>=limite?'red':'green'}">${Math.max(0,limite-usados)}/${limite}</div><div class="sum-lbl">CPFs livres</div></div>
   </div>`
-
-  // dots CPF
-  html+=`<div style="margin-bottom:14px"><div class="muted" style="font-size:11px;margin-bottom:6px">Uso de CPFs (${usados}/${limite}):</div><div class="cpf-dots">`
-  for(let i=0;i<limite;i++) html+=`<div class="cpf-dot ${i<usados?'used':'free'}" title="${i<usados?'Usado':'Livre'}"></div>`
-  html+=`</div></div>`
-
-  if(!all.length){ html+='<div class="empty">Nenhuma movimentação nesta conta</div>' }
-  else {
-    html+=all.map(x=>{
-      const m=x._t==='compra'?calcM(x.valor,x.milhas):0
-      return `<div class="hist-item">
-        <div class="hist-icon" style="background:${x._t==='compra'?'#1a3a5c':'#3a1a1a'}">${x._t==='compra'?'💰':'🛫'}</div>
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:600">${x._t==='compra'?`Compra via ${esc(x.fonte||'—')}`:esc(x.rota||'—')}</div>
-          <div class="muted" style="font-size:10px">${x.data||'—'}${x._t==='emissao'?` · ${esc(x.classe||'')} · ${x.pax||1} PAX · ${x.cpfsUsados||1} CPF(s) usados`:''}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:13px;font-weight:700;color:${x._t==='compra'?'#4c9ac9':'#c94c4c'}">${x._t==='compra'?'+':'-'}${fmtN(x.milhas)}</div>
-          ${m>0?`<div class="muted" style="font-size:10px">${fmtM(m)}/1k</div>`:''}
-        </div>
-      </div>`
-    }).join('')
-  }
+  html+=`<div class="muted" style="font-size:11px;margin-bottom:5px">CPFs (${usados}/${limite}):</div><div class="cpf-dots" style="margin-bottom:14px">`
+  for(let i=0;i<limite;i++)html+=`<div class="cpf-dot ${i<usados?'used':'free'}"></div>`
+  html+=`</div>`
+  if(!all.length){html+='<div class="empty">Sem movimentações</div>'}
+  else html+=all.map(x=>{const m=x._t==='compra'?calcM(x.valor,x.milhas):0;return `<div class="hist-item"><div class="hist-icon" style="background:${x._t==='compra'?'#1a3a5c':'#3a1a1a'}">${x._t==='compra'?'💰':'🛫'}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${x._t==='compra'?`via ${esc(x.fonte||'—')}`:esc(x.rota||'—')}</div><div class="muted" style="font-size:10px">${x.data||'—'}${x._t==='emissao'?` · ${esc(x.classe||'')} · ${x.pax||1} PAX · ${x.cpfs_usados||1} CPF(s)`:''}</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${x._t==='compra'?'#4c9ac9':'#c94c4c'}">${x._t==='compra'?'+':'-'}${fmtN(x.milhas)}</div>${m>0?`<div class="muted" style="font-size:10px">${fmtM(m)}/1k</div>`:''}</div></div>`}).join('')
   document.getElementById('mhc-body').innerHTML=html
   document.getElementById('modal-hist-conta').classList.add('open')
 }
 
-// ── MODAL CONTA ──────────────────────────────────────────────────────────────
+// ── CRUD CONTA ───────────────────────────────────────────────────────────────
 function abrirModalConta(id){
-  const c=id?contas.find(x=>x.id===id):{id:'',dono:'',prog:'Smiles (GOL)',cpf:'',email:'',senha:'',saldo:0,limite:25,usadosManual:0,cm:0,obs:''}
+  const c=id?contas.find(x=>x.id===id):{id:'',dono:'',prog:'Smiles (GOL)',cpf:'',email:'',senha:'',saldo:0,limite:25,usados_manual:0,cm:0,obs:''}
   document.getElementById('mc-title').textContent=id?`Editar: ${c.dono}`:'Nova Conta'
   document.getElementById('c-id').value=c.id||''
   document.getElementById('c-dono').value=c.dono||''
+  document.getElementById('c-prog').value=c.prog||'Smiles (GOL)'
   document.getElementById('c-cpf').value=c.cpf||''
   document.getElementById('c-email').value=c.email||''
   document.getElementById('c-senha').value=c.senha||''
   document.getElementById('c-saldo').value=c.saldo||0
   document.getElementById('c-limite').value=c.limite||25
-  document.getElementById('c-usados').value=c.usadosManual||0
+  document.getElementById('c-usados').value=c.usados_manual||0
   document.getElementById('c-cm').value=c.cm||0
   document.getElementById('c-obs').value=c.obs||''
-  document.getElementById('c-prog').value=c.prog||'Smiles (GOL)'
   document.getElementById('modal-conta').classList.add('open')
 }
 function editarConta(id){abrirModalConta(id)}
 
-function salvarConta(){
+async function salvarConta(){
   const id=document.getElementById('c-id').value
   const dono=document.getElementById('c-dono').value.trim()
-  const cpf=document.getElementById('c-cpf').value.trim()
-  if(!dono){toast('Nome do titular obrigatório',false);return}
-  const obj={
-    id:id||uid(),dono,
-    prog:document.getElementById('c-prog').value,
-    cpf,email:document.getElementById('c-email').value.trim(),
-    senha:document.getElementById('c-senha').value.trim(),
-    saldo:Number(document.getElementById('c-saldo').value)||0,
-    limite:Number(document.getElementById('c-limite').value)||25,
-    usadosManual:Number(document.getElementById('c-usados').value)||0,
-    cm:Number(document.getElementById('c-cm').value)||0,
-    obs:document.getElementById('c-obs').value.trim()
-  }
-  if(id){contas=contas.map(c=>c.id===id?obj:c);toast('Conta atualizada!')}
-  else{contas.push(obj);toast('Conta adicionada!')}
-  persist();fecharModal('modal-conta');updateAll()
+  if(!dono){toast('Nome obrigatório',false);return}
+  const obj={id:id||uid(),dono,prog:document.getElementById('c-prog').value,cpf:document.getElementById('c-cpf').value.trim(),email:document.getElementById('c-email').value.trim(),senha:document.getElementById('c-senha').value.trim(),saldo:Number(document.getElementById('c-saldo').value)||0,limite:Number(document.getElementById('c-limite').value)||25,usados_manual:Number(document.getElementById('c-usados').value)||0,cm:Number(document.getElementById('c-cm').value)||0,obs:document.getElementById('c-obs').value.trim(),updated_at:new Date().toISOString()}
+  setLoading(true)
+  try{
+    if(id){await sb('PATCH','contas',obj,`?id=eq.${id}`);contas=contas.map(c=>c.id===id?{...c,...obj}:c);toast('Conta atualizada!')}
+    else{await sb('POST','contas',obj);contas.push(obj);toast('Conta adicionada!')}
+    fecharModal('modal-conta');updateAll()
+  }catch(e){toast('Erro: '+e.message,false)}
+  setLoading(false)
 }
 
-function excluirConta(id){
-  if(!confirm('Excluir esta conta? Histórico relacionado será mantido.'))return
-  contas=contas.filter(c=>c.id!==id);persist();toast('Conta removida.');updateAll()
+async function excluirConta(id){
+  if(!confirm('Excluir esta conta?'))return
+  setLoading(true)
+  try{
+    await sb('DELETE','contas','',`?id=eq.${id}`)
+    contas=contas.filter(c=>c.id!==id)
+    compras=compras.filter(c=>c.conta_id!==id)
+    emissoes=emissoes.filter(e=>e.conta_id!==id)
+    toast('Conta removida.');updateAll()
+  }catch(e){toast('Erro: '+e.message,false)}
+  setLoading(false)
 }
 
-// ── MODAL COMPRA ─────────────────────────────────────────────────────────────
+// ── CRUD COMPRA ──────────────────────────────────────────────────────────────
 function abrirCompra(cId){
   document.getElementById('cp-id').value=''
   document.getElementById('cp-data').value=hoje()
@@ -774,38 +554,29 @@ function abrirCompra(cId){
   onContaCompra();calcCpMilh()
   document.getElementById('modal-compra').classList.add('open')
 }
-function onContaCompra(){
-  const c=contas.find(x=>x.id===document.getElementById('cp-conta').value)
-  document.getElementById('cp-conta-lbl').textContent=c?`${c.dono} / ${c.prog}`:'—'
-}
-function calcCpMilh(){
-  const m=Number(document.getElementById('cp-milhas').value)||0
-  const v=Number(document.getElementById('cp-valor').value)||0
-  const milh=calcM(v,m)
-  const el=document.getElementById('cp-milh-v')
-  el.textContent=milh>0?fmtM(milh):'—';el.className=mc(milh)
-}
-function salvarCompra(){
+function onContaCompra(){const c=contas.find(x=>x.id===document.getElementById('cp-conta').value);document.getElementById('cp-conta-lbl').textContent=c?`${c.dono} / ${c.prog}`:'—'}
+function calcCpMilh(){const m=Number(document.getElementById('cp-milhas').value)||0;const v=Number(document.getElementById('cp-valor').value)||0;const milh=calcM(v,m);const el=document.getElementById('cp-milh-v');el.textContent=milh>0?fmtM(milh):'—';el.className=mc(milh)}
+
+async function salvarCompra(){
   const contaId=document.getElementById('cp-conta').value
   const milhas=Number(document.getElementById('cp-milhas').value)||0
   const valor=Number(document.getElementById('cp-valor').value)||0
   if(!contaId||!milhas){toast('Conta e milhas obrigatórios',false);return}
   const conta=contas.find(c=>c.id===contaId)
-  const obj={
-    id:uid(),data:document.getElementById('cp-data').value,
-    contaId,nomeConta:conta?.dono||'',cpf:conta?.cpf||'',companhia:conta?.prog||'',
-    milhas,valor,milheiro:calcM(valor,milhas),
-    fonte:document.getElementById('cp-fonte').value,
-    cartao:document.getElementById('cp-cartao').value,
-    loc:document.getElementById('cp-loc').value,
-    obs:document.getElementById('cp-obs').value
-  }
-  compras.push(obj)
-  contas=contas.map(c=>c.id===contaId?{...c,saldo:(c.saldo||0)+milhas}:c)
-  persist();fecharModal('modal-compra');toast(`Compra registrada! CM: ${fmtM(calcM(valor,milhas))}`);updateAll()
+  const obj={id:uid(),data:document.getElementById('cp-data').value,conta_id:contaId,nome_conta:conta?.dono||'',cpf:conta?.cpf||'',companhia:conta?.prog||'',milhas,valor,milheiro:calcM(valor,milhas),fonte:document.getElementById('cp-fonte').value,cartao:document.getElementById('cp-cartao').value,loc:document.getElementById('cp-loc').value,obs:document.getElementById('cp-obs').value}
+  const novoSaldo=(conta?.saldo||0)+milhas
+  setLoading(true)
+  try{
+    await sb('POST','compras',obj)
+    await sb('PATCH','contas',{saldo:novoSaldo,updated_at:new Date().toISOString()},`?id=eq.${contaId}`)
+    compras.unshift(obj)
+    contas=contas.map(c=>c.id===contaId?{...c,saldo:novoSaldo}:c)
+    fecharModal('modal-compra');toast(`Compra registrada! CM: ${fmtM(calcM(valor,milhas))}`);updateAll()
+  }catch(e){toast('Erro: '+e.message,false)}
+  setLoading(false)
 }
 
-// ── MODAL EMISSAO ────────────────────────────────────────────────────────────
+// ── CRUD EMISSAO ─────────────────────────────────────────────────────────────
 function abrirEmissao(cId){
   document.getElementById('em-id').value=''
   document.getElementById('em-data').value=hoje()
@@ -828,17 +599,13 @@ function onContaEmissao(){
   if(c){
     inf.style.display=''
     document.getElementById('em-saldo').textContent=fmtN(c.saldo)
-    const limite=c.limite||25
-    const usados=cpfsUsados(c.id)+(c.usadosManual||0)
-    const livres=Math.max(0,limite-usados)
-    const lcEl=document.getElementById('em-cpfs-livres')
-    lcEl.textContent=livres;lcEl.className=livres===0?'red':livres<=5?'milh-warn':'green'
-    const cm=cmDaConta(c.id)||(c.cm||0)
-    const cmEl=document.getElementById('em-cm')
-    cmEl.textContent=cm>0?fmtM(cm):'—';cmEl.className=mc(cm)
-  } else inf.style.display='none'
+    const limite=c.limite||25;const usados=cpfsUsados(c.id)+(c.usados_manual||0);const livres=Math.max(0,limite-usados)
+    const lcEl=document.getElementById('em-cpfs-livres');lcEl.textContent=livres;lcEl.className=livres===0?'red':livres<=5?'milh-warn':'green'
+    const cm=cmDaConta(c.id)||(c.cm||0);const cmEl=document.getElementById('em-cm');cmEl.textContent=cm>0?fmtM(cm):'—';cmEl.className=mc(cm)
+  }else inf.style.display='none'
 }
-function salvarEmissao(){
+
+async function salvarEmissao(){
   const contaId=document.getElementById('em-conta').value
   const milhas=Number(document.getElementById('em-milhas').value)||0
   const cpfsU=Number(document.getElementById('em-cpfs-usados').value)||1
@@ -846,47 +613,29 @@ function salvarEmissao(){
   if(!contaId||!milhas){toast('Conta e milhas obrigatórios',false);return}
   const conta=contas.find(c=>c.id===contaId)
   if(status==='Emitido'&&conta&&conta.saldo<milhas){toast(`Saldo insuficiente! (${fmtN(conta.saldo)} milhas)`,false);return}
-  const limite=conta?.limite||25
-  const usados=cpfsUsados(contaId)+(conta?.usadosManual||0)
-  if(status==='Emitido'&&usados+cpfsU>limite){
-    if(!confirm(`⚠️ Isso vai usar ${cpfsU} CPF(s), mas só há ${Math.max(0,limite-usados)} livre(s). Continuar mesmo assim?`))return
-  }
-  const obj={
-    id:uid(),data:document.getElementById('em-data').value,
-    contaId,nomeConta:conta?.dono||'',cpf:conta?.cpf||'',companhia:conta?.prog||'',
-    milhas,rota:document.getElementById('em-rota').value,
-    loc:document.getElementById('em-loc').value,
-    pax:Number(document.getElementById('em-pax').value)||1,
-    cpfsUsados:cpfsU,
-    classe:document.getElementById('em-classe').value,
-    status,taxas:Number(document.getElementById('em-taxas').value)||0,
-    obs:document.getElementById('em-obs').value
-  }
-  emissoes.push(obj)
-  if(status==='Emitido') contas=contas.map(c=>c.id===contaId?{...c,saldo:Math.max(0,(c.saldo||0)-milhas)}:c)
-  persist();fecharModal('modal-emissao');toast('Emissão registrada!');updateAll()
+  const obj={id:uid(),data:document.getElementById('em-data').value,conta_id:contaId,nome_conta:conta?.dono||'',cpf:conta?.cpf||'',companhia:conta?.prog||'',milhas,rota:document.getElementById('em-rota').value,loc:document.getElementById('em-loc').value,pax:Number(document.getElementById('em-pax').value)||1,cpfs_usados:cpfsU,classe:document.getElementById('em-classe').value,status,taxas:Number(document.getElementById('em-taxas').value)||0,obs:document.getElementById('em-obs').value}
+  const novoSaldo=status==='Emitido'?Math.max(0,(conta?.saldo||0)-milhas):(conta?.saldo||0)
+  setLoading(true)
+  try{
+    await sb('POST','emissoes',obj)
+    if(status==='Emitido') await sb('PATCH','contas',{saldo:novoSaldo,updated_at:new Date().toISOString()},`?id=eq.${contaId}`)
+    emissoes.unshift(obj)
+    if(status==='Emitido') contas=contas.map(c=>c.id===contaId?{...c,saldo:novoSaldo}:c)
+    fecharModal('modal-emissao');toast('Emissão registrada!');updateAll()
+  }catch(e){toast('Erro: '+e.message,false)}
+  setLoading(false)
 }
 
-// ── MODAL CLOSE ──────────────────────────────────────────────────────────────
+// ── MODAL ────────────────────────────────────────────────────────────────────
 function fecharModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}))
 
-// ── THEME ───────────────────────────────────────────────────────────────────
-function toggleTheme(){
-  const html=document.documentElement
-  const isDark=html.getAttribute('data-theme')!=='light'
-  html.setAttribute('data-theme',isDark?'light':'dark')
-  document.getElementById('theme-toggle').textContent=isDark?'🌙':'☀️'
-  localStorage.setItem('gnx-theme',isDark?'light':'dark')
-}
-// load saved theme
-(function(){
-  const t=localStorage.getItem('gnx-theme')
-  if(t){document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('theme-toggle');if(btn)btn.textContent=t==='light'?'🌙':'☀️'})}
-})()
+// ── THEME ────────────────────────────────────────────────────────────────────
+function toggleTheme(){const html=document.documentElement;const isDark=html.getAttribute('data-theme')!=='light';html.setAttribute('data-theme',isDark?'light':'dark');document.getElementById('theme-toggle').textContent=isDark?'🌙':'☀️';localStorage.setItem('gnx-theme',isDark?'light':'dark')}
+;(function(){const t=localStorage.getItem('gnx-theme');if(t){document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('theme-toggle');if(btn)btn.textContent=t==='light'?'🌙':'☀️'})}})()
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
-updateAll()
+loadAll()
 </script>
 </body>
 </html>
