@@ -144,10 +144,13 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
       <button id="theme-toggle" onclick="toggleTheme()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:13px">🌙</button>
     </div>
   </div>
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('cards')">Visão Geral</button>
-    <button class="tab" onclick="showTab('contas')">Contas</button>
-    <button class="tab" onclick="showTab('historico')">Histórico</button>
+  <div class="tabs" style="justify-content:space-between;display:flex">
+    <div style="display:flex">
+      <button class="tab active" onclick="showTab('cards')">Visão Geral</button>
+      <button class="tab" onclick="showTab('contas')">Contas</button>
+      <button class="tab" onclick="showTab('historico')">Histórico</button>
+    </div>
+    <button class="btn btn-primary" style="margin:6px 0;font-size:12px;padding:7px 14px" onclick="abrirSugestao()">🎯 Sugerir conta para emissão</button>
   </div>
 </div>
 
@@ -305,6 +308,24 @@ label.lbl{display:block;color:var(--muted);font-size:10px;margin-bottom:4px;text
       <button class="btn btn-secondary" onclick="fecharModal('modal-emissao')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarEmissao()">Salvar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL SUGESTAO -->
+<div class="modal-bg" id="modal-sugestao">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header"><div class="modal-title">🎯 Sugerir conta para emissão</div><button class="modal-close" onclick="fecharModal('modal-sugestao')">×</button></div>
+    <div class="row3">
+      <div class="field"><label class="lbl">Milhas necessárias *</label><input type="number" id="sg-milhas" placeholder="Ex: 50000" oninput="calcularSugestao()"></div>
+      <div class="field"><label class="lbl">CPFs necessários</label><input type="number" id="sg-cpfs" value="1" min="1" oninput="calcularSugestao()"></div>
+      <div class="field"><label class="lbl">Programa (opcional)</label>
+        <select id="sg-prog" onchange="calcularSugestao()">
+          <option value="">Qualquer programa</option>
+          <option>Smiles (GOL)</option><option>Latam Pass</option><option>TudoAzul</option><option>Livelo</option><option>Esfera</option><option>TAP Miles&Go</option><option>Iberia Avios</option><option>AAdvantage</option><option>ConnectMiles</option><option>LifeMiles</option><option>Air Europa Suma</option><option>Qatar Privilege</option><option>Outro</option>
+        </select>
+      </div>
+    </div>
+    <div id="sg-resultado" style="margin-top:16px"></div>
   </div>
 </div>
 
@@ -472,6 +493,93 @@ function renderHistorico(){
     const m=x._t==='compra'?calcM(x.valor,x.milhas):0
     return `<tr><td>${x.data||'—'}</td><td>${x._t==='compra'?'💰 Compra':'🛫 Emissão'}</td><td><strong>${esc(x.nome_conta||'—')}</strong></td><td><span class="badge">${esc(x.companhia||'—')}</span></td><td style="color:${x._t==='compra'?'#4c9ac9':'#c94c4c'};font-weight:700">${x._t==='compra'?'+':'-'}${fmtN(x.milhas)}</td><td>${x._t==='compra'?fmtR(x.valor||0):fmtR(x.taxas||0)}</td><td>${m>0?`<span class="${mc(m)}">${fmtM(m)}</span>`:'—'}</td><td>${esc(x._t==='compra'?x.fonte||'—':x.rota||'—')}</td><td>${x._t==='emissao'?`<span class="badge ${stC[x.status]||''}">${esc(x.status)}</span>`:'<span class="badge badge-ok">OK</span>'}</td></tr>`
   }).join('')
+}
+
+// ── SUGESTÃO DE CONTA (lógica pura, sem IA) ──────────────────────────────────
+function abrirSugestao(){
+  document.getElementById('sg-milhas').value=''
+  document.getElementById('sg-cpfs').value=1
+  document.getElementById('sg-prog').value=''
+  document.getElementById('sg-resultado').innerHTML='<div class="empty">Preencha as milhas necessárias para ver as sugestões</div>'
+  document.getElementById('modal-sugestao').classList.add('open')
+  setTimeout(()=>document.getElementById('sg-milhas').focus(),100)
+}
+
+function calcularSugestao(){
+  const milhasNec=Number(document.getElementById('sg-milhas').value)||0
+  const cpfsNec=Number(document.getElementById('sg-cpfs').value)||1
+  const progFiltro=document.getElementById('sg-prog').value
+  const out=document.getElementById('sg-resultado')
+
+  if(milhasNec<=0){ out.innerHTML='<div class="empty">Preencha as milhas necessárias para ver as sugestões</div>'; return }
+
+  // monta lista de candidatas com seus dados calculados
+  let candidatas = contas
+    .filter(c=>!progFiltro||c.prog===progFiltro)
+    .map(c=>{
+      const limite=c.limite||25
+      const usados=cpfsUsados(c.id)+(c.usados_manual||0)
+      const livres=Math.max(0,limite-usados)
+      const cmReal=cmDaConta(c.id)
+      const cm=cmReal>0?cmReal:(c.cm||0)
+      const temSaldo = c.saldo >= milhasNec
+      const temCpfs = livres >= cpfsNec
+      const elegivel = temSaldo && temCpfs
+      return {...c, livres, cm, temSaldo, temCpfs, elegivel}
+    })
+
+  if(!candidatas.length){
+    out.innerHTML='<div class="empty">Nenhuma conta cadastrada'+(progFiltro?` para ${esc(progFiltro)}`:'')+'</div>'
+    return
+  }
+
+  // separa elegíveis (ordenadas por menor CM) das não-elegíveis
+  const elegiveis = candidatas.filter(c=>c.elegivel).sort((a,b)=>{
+    // sem CM cadastrado vai pro fim
+    if(a.cm<=0 && b.cm>0) return 1
+    if(b.cm<=0 && a.cm>0) return -1
+    return a.cm-b.cm
+  })
+  const naoElegiveis = candidatas.filter(c=>!c.elegivel)
+
+  let html=''
+
+  if(elegiveis.length){
+    html += `<div class="muted" style="font-size:11px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">✅ Contas aptas (ordenadas por menor custo)</div>`
+    html += elegiveis.map((c,i)=>{
+      const custoTotal = c.cm>0 ? (milhasNec/1000)*c.cm : 0
+      const melhor = i===0
+      return `<div style="background:var(--bg3);border:1px solid ${melhor?'#c9a84c':'var(--border)'};border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${melhor?'🏆 ':''}${esc(c.dono)} <span class="badge" style="margin-left:6px">${esc(c.prog)}</span></div>
+          <div class="muted" style="font-size:11px;margin-top:3px">Saldo: ${fmtN(c.saldo)} mi · CPFs livres: ${c.livres} · CPF: ${esc(c.cpf||'—')}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="${mc(c.cm)}" style="font-size:14px">${c.cm>0?fmtM(c.cm):'CM não definido'}</div>
+          ${custoTotal>0?`<div class="muted" style="font-size:11px">≈ ${fmtR(custoTotal)}</div>`:''}
+        </div>
+      </div>`
+    }).join('')
+  } else {
+    html += `<div style="background:#3a1a1a;border:1px solid #5a2a2a;border-radius:10px;padding:14px;margin-bottom:12px;color:#e8a8a8;font-size:13px">
+      ⚠️ Nenhuma conta atende sozinha esse pedido (${fmtN(milhasNec)} milhas + ${cpfsNec} CPF${cpfsNec>1?'s':''}).
+    </div>`
+  }
+
+  if(naoElegiveis.length){
+    html += `<div class="muted" style="font-size:11px;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.5px">❌ Não atendem</div>`
+    html += naoElegiveis.map(c=>{
+      const motivos=[]
+      if(!c.temSaldo) motivos.push(`saldo insuficiente (tem ${fmtN(c.saldo)}, precisa ${fmtN(milhasNec)})`)
+      if(!c.temCpfs) motivos.push(`só ${c.livres} CPF(s) livre(s), precisa ${cpfsNec}`)
+      return `<div style="padding:9px 14px;margin-bottom:5px;border-radius:8px;background:var(--bg4);opacity:.7">
+        <div style="font-size:12px;font-weight:600">${esc(c.dono)} <span class="badge" style="margin-left:5px">${esc(c.prog)}</span></div>
+        <div class="muted" style="font-size:10px;margin-top:2px">${motivos.join(' · ')}</div>
+      </div>`
+    }).join('')
+  }
+
+  out.innerHTML=html
 }
 
 // ── HIST CONTA ───────────────────────────────────────────────────────────────
